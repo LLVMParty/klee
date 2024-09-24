@@ -525,7 +525,10 @@ void ExprSMTLIBPrinter::generateOutput() {
     printNotice();
   printOptions();
   printSetLogic();
-  printArrayDeclarations();
+  if (logicToUse == QF_BV)
+    printBvDeclarations();
+  else
+    printArrayDeclarations();
 
   if (humanReadable)
     printHumanReadableQuery();
@@ -539,6 +542,9 @@ void ExprSMTLIBPrinter::generateOutput() {
 void ExprSMTLIBPrinter::printSetLogic() {
   *o << "(set-logic ";
   switch (logicToUse) {
+  case QF_BV:
+    *o << "QF_BV";
+    break;
   case QF_ABV:
     *o << "QF_ABV";
     break;
@@ -557,6 +563,22 @@ struct ArrayPtrsByName {
   }
 };
 
+}
+
+void ExprSMTLIBPrinter::printBvDeclarations() {
+  // Assume scan() has been called
+  if (humanReadable)
+    *o << "; Bitvector declarations\n";
+
+  // Declare arrays in a deterministic order.
+  std::vector<const Array *> sortedArrays(usedArrays.begin(), usedArrays.end());
+  std::sort(sortedArrays.begin(), sortedArrays.end(), ArrayPtrsByName());
+  for (std::vector<const Array *>::iterator it = sortedArrays.begin();
+       it != sortedArrays.end(); it++) {
+    *o << "(declare-fun " << (*it)->name << " () "
+       << "(_ BitVec " << (*it)->getRange()
+       << ") )\n";
+  }
 }
 
 void ExprSMTLIBPrinter::printArrayDeclarations() {
@@ -682,8 +704,12 @@ void ExprSMTLIBPrinter::printAction() {
       theArray = *it;
       // Loop over the array indices
       for (unsigned int index = 0; index < theArray->size; ++index) {
-        *o << "(get-value ( (select " << (**it).name << " (_ bv" << index << " "
-           << theArray->getDomain() << ") ) ) )\n";
+        if (logicToUse == QF_BV) {
+          *o << "(get-value (" << (*it)->name << ") )\n";
+        } else {
+          *o << "(get-value ( (select " << (**it).name << " (_ bv" << index << " "
+             << theArray->getDomain() << ") ) ) )\n";
+        }
       }
     }
   }
@@ -697,6 +723,9 @@ void ExprSMTLIBPrinter::scan(const ref<Expr> &e) {
 
   if (seenExprs.insert(e).second) {
     // We've not seen this expression before
+
+    if (logicToUse == QF_BV)
+      bindings.insert(std::make_pair(e, bindings.size() + 1));
 
     if (const ReadExpr *re = dyn_cast<ReadExpr>(e)) {
 
@@ -884,8 +913,13 @@ void ExprSMTLIBPrinter::printAssert(const ref<Expr> &e) {
         p->pushIndent();
         printSeperator();
 
-        // We can abbreviate SORT_BOOL or SORT_BITVECTOR in let expressions
-        printExpression(j->first, getSort(j->first));
+        if (const ReadExpr *re = dyn_cast<ReadExpr>(j->first)) {
+          if (logicToUse == QF_BV)
+            *p << re->updates.root->name;
+        } else {
+          // We can abbreviate SORT_BOOL or SORT_BITVECTOR in let expressions
+          printExpression(j->first, getSort(j->first));
+        }
 
         p->popIndent();
         printSeperator();
