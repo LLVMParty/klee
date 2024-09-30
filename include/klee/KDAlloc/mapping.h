@@ -16,8 +16,12 @@
 #include <cstdlib>
 #include <utility>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 #if defined(__linux__)
 #include <linux/version.h>
@@ -29,6 +33,43 @@
 #endif
 
 #include "klee/Support/ErrorHandling.h"
+
+#ifdef _WIN32
+// Windows-specific definitions
+#define MAP_FAILED ((void *)-1)
+#define MAP_PRIVATE 0x02
+#define MAP_ANON 0x20
+#define PROT_READ 0x1
+#define PROT_WRITE 0x2
+#define PROT_EXEC 0x4
+
+inline void *mmap(void *addr, size_t length, int prot, int flags, int fd,  int64_t offset) {
+  DWORD flProtect = 0;
+  if (prot & PROT_READ)
+    flProtect |= PAGE_READONLY;
+  if (prot & PROT_WRITE)
+    flProtect |= PAGE_READWRITE;
+  if (prot & PROT_EXEC)
+    flProtect |= PAGE_EXECUTE_READ;
+
+  void *ptr = VirtualAlloc(addr, length, MEM_COMMIT | MEM_RESERVE, flProtect);
+  if (ptr == NULL)
+    return MAP_FAILED;
+  return ptr;
+}
+
+inline int munmap(void *addr, size_t length) {
+  return VirtualFree(addr, 0, MEM_RELEASE) ? 0 : -1;
+}
+
+inline long sysconf(int name) {
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return si.dwPageSize;
+}
+
+#define _SC_PAGESIZE 1
+#endif
 
 namespace klee::kdalloc {
 class Mapping {

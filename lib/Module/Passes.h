@@ -18,7 +18,7 @@ DISABLE_WARNING_DEPRECATED_DECLARATIONS
 #if LLVM_VERSION_MAJOR >= 17
 #include "llvm/TargetParser/Triple.h"
 #else
-#include "llvm/ADT/Triple.h"
+#include "llvm/TargetParser/Triple.h"
 #endif // LLVM_VERSION_MAJOR
 #include "llvm/CodeGen/IntrinsicLowering.h"
 #include "llvm/IR/Constants.h"

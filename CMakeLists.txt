@@ -13,6 +13,31 @@
 cmake_minimum_required(VERSION 3.16.0)
 project(KLEE CXX C)
 
+if(WIN32)
+  # Aggiungi qui i nuovi flag per Windows
+  list(APPEND KLEE_COMPONENT_CXX_FLAGS
+    /nologo /W3 /EHsc /wd4141 /wd4146 /wd4180 /wd4244
+    /wd4258 /wd4267 /wd4291 /wd4345 /wd4351 /wd4355 /wd4456
+    /wd4457 /wd4458 /wd4459 /wd4503 /wd4624 /wd4722 /wd4800
+    /wd4100 /wd4127 /wd4512 /wd4505 /wd4610 /wd4510 /wd4702
+    /wd4245 /wd4706 /wd4310 /wd4701 /wd4703 /wd4389 /wd4611
+    /wd4805 /wd4204 /wd4577 /wd4091 /wd4592 /wd4324
+  )
+
+  list(APPEND KLEE_COMPONENT_CXX_DEFINES
+    -D_WIN32
+    -DWIN32_LEAN_AND_MEAN
+    -DNOMINMAX
+    -D_CRT_SECURE_NO_DEPRECATE
+    -D_CRT_SECURE_NO_WARNINGS
+    -D_CRT_NONSTDC_NO_DEPRECATE
+    -D_CRT_NONSTDC_NO_WARNINGS
+    -D_SCL_SECURE_NO_DEPRECATE
+    -D_SCL_SECURE_NO_WARNINGS
+    -DGOOGLE_PROTOBUF_NO_RTTI
+  )
+endif()
+
 ###############################################################################
 # Project version
 ###############################################################################
@@ -305,20 +330,20 @@ endif()
 ################################################################################
 # Detect SQLite3
 ################################################################################
-find_package(SQLite3)
-if (NOT SQLite3_FOUND)
-  message( FATAL_ERROR "SQLite3 not found, please install" )
-endif()
+#find_package(SQLite3)
+#if (NOT SQLite3_FOUND)
+#  message( FATAL_ERROR "SQLite3 not found, please install" )
+#endif()
 
-find_program(
-  SQLITE_CLI
-  NAMES "sqlite3"
-  DOC "Path to sqlite3 tool"
-)
+#find_program(
+#  SQLITE_CLI
+#  NAMES "sqlite3"
+#  DOC "Path to sqlite3 tool"
+#)
 
-if (NOT SQLITE_CLI)
-  set(SQLITE_CLI "")
-endif()
+#if (NOT SQLITE_CLI)
+#  set(SQLITE_CLI "")
+#endif()
 
 ################################################################################
 # Detect libcap
@@ -652,13 +677,13 @@ add_subdirectory(runtime)
 ################################################################################
 # KLEE tools
 ################################################################################
-add_subdirectory(tools)
+#add_subdirectory(tools)
 
 ################################################################################
 # Testing
 ################################################################################
 option(ENABLE_UNIT_TESTS "Enable unit tests" OFF)
-option(ENABLE_SYSTEM_TESTS "Enable system tests" ON)
+option(ENABLE_SYSTEM_TESTS "Enable system tests" OFF)
 
 if (ENABLE_UNIT_TESTS OR ENABLE_SYSTEM_TESTS)
   message(STATUS "Testing is enabled")

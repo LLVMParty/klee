@@ -34,19 +34,33 @@ DISABLE_WARNING_POP
 #include <csetjmp>
 #include <csignal>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <signal.h>
+#endif
+
 using namespace llvm;
 using namespace klee;
 
 /***/
 
+#ifdef _WIN32
+static jmp_buf escapeCallJmpBuf;
+
+LONG WINAPI WindowsExceptionHandler(EXCEPTION_POINTERS *ExceptionInfo) {
+  longjmp(escapeCallJmpBuf, 1);
+  return EXCEPTION_EXECUTE_HANDLER;
+}
+#else
 static sigjmp_buf escapeCallJmpBuf;
 
 extern "C" {
-
 static void sigsegv_handler(int signal, siginfo_t *info, void *context) {
   siglongjmp(escapeCallJmpBuf, 1);
 }
 }
+#endif
 
 namespace klee {
 
@@ -219,14 +233,29 @@ bool ExternalDispatcherImpl::executeCall(KCallable *callable, Instruction *i,
 // FIXME: This is not reentrant.
 static uint64_t *gTheArgsP;
 bool ExternalDispatcherImpl::runProtectedCall(Function *f, uint64_t *args) {
-  struct sigaction segvAction, segvActionOld;
-  bool res;
-
+  
   if (!f)
     return false;
 
   std::vector<GenericValue> gvArgs;
   gTheArgsP = args;
+  bool res;
+
+#ifdef _WIN32
+  PVOID handler = AddVectoredExceptionHandler(1, WindowsExceptionHandler);
+
+  if (setjmp(escapeCallJmpBuf) == 0) {
+    errno = lastErrno;
+    executionEngine->runFunction(f, gvArgs);
+    lastErrno = errno;
+    res = true;
+  } else {
+    res = false;
+  }
+
+  RemoveVectoredExceptionHandler(handler);
+#else
+  struct sigaction segvAction, segvActionOld;
 
   segvAction.sa_handler = nullptr;
   sigemptyset(&(segvAction.sa_mask));
@@ -246,6 +275,8 @@ bool ExternalDispatcherImpl::runProtectedCall(Function *f, uint64_t *args) {
   }
 
   sigaction(SIGSEGV, &segvActionOld, nullptr);
+#endif
+
   return res;
 }
 

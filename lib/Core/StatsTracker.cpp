@@ -47,7 +47,17 @@ DISABLE_WARNING_DEPRECATED_DECLARATIONS
 DISABLE_WARNING_POP
 
 #include <fstream>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
+
+inline int getCurrentProcessId() {
+#ifdef _WIN32
+  return static_cast<int>(GetCurrentProcessId());
+#else
+  return getpid();
+#endif
+}
 
 using namespace klee;
 using namespace llvm;
@@ -640,7 +650,7 @@ void StatsTracker::writeIStats() {
 
   of << "version: 1\n";
   of << "creator: klee\n";
-  of << "pid: " << getpid() << "\n";
+  of << "pid: " << getCurrentProcessId() << "\n";
   of << "cmd: " << m->getModuleIdentifier() << "\n\n";
   of << "\n";
 

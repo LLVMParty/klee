@@ -14,9 +14,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <winsock.h> 
+#include <sys/timeb.h>
+#else
 #include <sys/mman.h>
 #include <sys/time.h>
-#include <time.h>
+#include <unistd.h>
+#endif
+
 
 #include "klee/klee.h"
 
@@ -24,6 +33,18 @@
 
 static KTest *testData = 0;
 static unsigned testPosition = 0;
+
+#ifdef _WIN32
+
+// Implementazione di gettimeofday per Windows
+int gettimeofday(struct timeval *tp, void *tzp) {
+  struct _timeb timebuffer;
+  _ftime(&timebuffer);
+  tp->tv_sec = (long)timebuffer.time;
+  tp->tv_usec = timebuffer.millitm * 1000;
+  return 0;
+}
+#endif
 
 static unsigned char rand_byte(void) {
   unsigned x = rand();
