@@ -86,19 +86,59 @@
 #include <cinttypes>
 #include <cstdint>
 #include <cstring>
-#include <cxxabi.h>
 #include <fstream>
 #include <iomanip>
 #include <iosfwd>
 #include <limits>
 #include <sstream>
 #include <string>
+#include <vector>
+#include <cstdlib>  
+#include <ctime>     
+
+#ifdef _WIN32
+#include <errno.h>
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+#include <sys/errno.h>
+#else
+#include <errno.h>
+extern "C" int *__errno_location(void) throw();
+#endif
+
+
+
+#ifdef _WIN32
+#include <windows.h>
+#include <algorithm> // Per std::max
+#include <cstdint>   // Per uint64_t
+#else
+#include <cxxabi.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
-#include <vector>
+#endif
 
 using namespace llvm;
 using namespace klee;
+
+// Implementazione alternativa per Windows di funzioni che potrebbero dipendere
+// da cxxabi.h
+#ifdef _WIN32
+namespace {
+std::string demangle(const char *name) {
+  return name; // Su Windows, restituiamo il nome senza demangling
+}
+} // namespace
+#else
+namespace {
+std::string demangle(const char *name) {
+  int status;
+  char *demangled = abi::__cxa_demangle(name, nullptr, nullptr, &status);
+  std::string result(status == 0 ? demangled : name);
+  free(demangled);
+  return result;
+}
+} // namespace
+#endif
 
 namespace klee {
 cl::OptionCategory DebugCat("Debugging options",
@@ -487,6 +527,11 @@ Executor::Executor(LLVMContext &ctx, const InterpreterOptions &opts,
       atMemoryLimit(false), inhibitForking(false), haltExecution(false),
       ivcEnabled(false), debugLogBuffer(debugBufferString) {
 
+
+    
+#ifdef _WIN32
+  srand(static_cast<unsigned int>(std::time(nullptr)));
+#endif
 
   const time::Span maxTime{MaxTime};
   if (maxTime) timers.add(
@@ -3571,7 +3616,8 @@ bool Executor::checkMemoryUsage() {
 
   // just guess at how many to kill
   const auto numStates = states.size();
-  auto toKill = std::max(1UL, numStates - numStates * MaxMemory / totalUsage);
+  uint64_t toKill = std::max(uint64_t(1), numStates - numStates * MaxMemory / totalUsage);      
+
   klee_warning("killing %lu states (over memory cap: %luMB)", toKill, totalUsage);
 
   // randomly select states for early termination
@@ -4168,7 +4214,7 @@ ref<Expr> Executor::replaceReadWithSymbolic(ExecutionState &state,
   if (!isa<ConstantExpr>(e))
     return e;
 
-  if (n != 1 && random() % n)
+  if (n != 1 && rand() % n)
     return e;
 
   // create a new fresh location, assert it is equal to concrete value in e
@@ -4677,7 +4723,13 @@ void Executor::runFunctionAsMain(Function *f,
 
   // force deterministic initialization of memory objects
   srand(1);
+#ifdef _WIN32
+  // Windows: use srand() again as srandom() is not available
+  srand(1);
+#else
+  // Unix-like systems: use srandom()
   srandom(1);
+#endif
   
   MemoryObject *argvMO = 0;
 
@@ -4990,11 +5042,13 @@ void Executor::prepareForEarlyExit() {
 
 /// Returns the errno location in memory
 int *Executor::getErrnoLocation(const ExecutionState &state) const {
-#if !defined(__APPLE__) && !defined(__FreeBSD__)
+#ifdef _WIN32
+  return _errno();
+#elif defined(__APPLE__) || defined(__FreeBSD__)
   /* From /usr/include/errno.h: it [errno] is a per-thread variable. */
-  return __errno_location();
-#else
   return __error();
+#else
+  return __errno_location();
 #endif
 }
 

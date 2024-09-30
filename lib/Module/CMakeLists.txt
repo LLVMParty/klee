@@ -23,8 +23,8 @@ set(KLEE_MODULE_COMPONENT_SRCS
 
 if ("${LLVM_VERSION_MAJOR}" LESS 17)
   LIST(APPEND KLEE_MODULE_COMPONENT_SRCS
-          InstrumentLegacy.cpp
-          OptimizeLegacy.cpp
+  Instrument.cpp
+  Optimize.cpp
   )
 else ()
   LIST(APPEND KLEE_MODULE_COMPONENT_SRCS

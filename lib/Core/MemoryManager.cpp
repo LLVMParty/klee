@@ -27,7 +27,9 @@ DISABLE_WARNING_POP
 
 #include <cinttypes>
 #include <algorithm>
+#ifndef _WIN32
 #include <sys/mman.h>
+#endif
 #include <tuple>
 #include <string>
 
@@ -36,7 +38,16 @@ using namespace klee;
 namespace klee {
 std::uint32_t MemoryManager::quarantine;
 
+#ifdef _WIN32
+std::size_t MemoryManager::pageSize = []() {
+  SYSTEM_INFO sysInfo;
+  GetSystemInfo(&sysInfo);
+  return sysInfo.dwPageSize;
+}();
+#else
 std::size_t MemoryManager::pageSize = sysconf(_SC_PAGE_SIZE);
+#endif
+
 
 bool MemoryManager::isDeterministic;
 
@@ -315,11 +326,19 @@ MemoryObject *MemoryManager::allocate(uint64_t size, bool isLocal,
     if (alignment <= 8)
       address = (uint64_t)malloc(size);
     else {
-      int res = posix_memalign((void **)&address, alignment, size);
-      if (res < 0) {
+#ifdef _WIN32
+      auto address1 = _aligned_malloc(size, alignment);
+      if (!address1) {
         klee_warning("Allocating aligned memory failed.");
         address = 0;
       }
+#else
+      int res = posix_memalign(&address, alignment, size);
+      if (res != 0) {
+        klee_warning("Allocating aligned memory failed.");
+        address = 0;
+      }
+#endif
     }
   }
 

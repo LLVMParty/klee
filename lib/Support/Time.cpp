@@ -6,17 +6,22 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-
-#include "klee/Support/ErrorHandling.h"
 #include "klee/System/Time.h"
-
-
+#include "klee/Support/ErrorHandling.h"
 #include <cstdint>
 #include <regex>
 #include <sstream>
 #include <tuple>
-#include <sys/resource.h>
 
+#define RUSAGE_SELF 0
+
+#ifdef _WIN32
+#include <psapi.h>
+#include <windows.h>
+#else
+#include <sys/resource.h>
+#include <sys/time.h>
+#endif
 
 using namespace klee;
 

@@ -365,7 +365,7 @@ bool AddressSpace::copyInConcrete(const MemoryObject *mo, const ObjectState *os,
     // The object is partially symbolic, it needs to be updated byte-by-byte
     // via object state's `write` function
     for (size_t i = 0, ie = mo->size; i < ie; ++i) {
-      u_int8_t external_byte_value = *(address + i);
+      uint8_t external_byte_value = *(address + i);
       if (external_byte_value != wos->concreteStore[i])
         wos->write8(i, external_byte_value);
     }
