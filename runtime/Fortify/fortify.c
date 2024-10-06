@@ -14,7 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
+#endif
+
 #include <unistd.h>
 
 char *__fgets_chk(char *s, size_t size, int strsize, FILE *stream) {

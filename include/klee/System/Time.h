@@ -72,40 +72,7 @@ inline int gettimeofday(struct timeval *tp, void *tzp) {
 #endif
 
 #ifdef _WIN32
-// Windows-specific implementation of getrusage
-int getrusage(int who, struct rusage *usage) {
-
-  FILETIME creation_time, exit_time, kernel_time, user_time;
-  PROCESS_MEMORY_COUNTERS pmc;
-
-  if (who != RUSAGE_SELF) {
-    return -1; // Only RUSAGE_SELF is supported on Windows
-  }
-
-  if (!GetProcessTimes(GetCurrentProcess(), &creation_time, &exit_time, &kernel_time, &user_time)) {
-    return -1;
-  }
-
-  if (!GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
-    return -1;
-  }
-
-  // Convert FILETIME to timeval
-  ULARGE_INTEGER kernel, user;
-  kernel.LowPart = kernel_time.dwLowDateTime;
-  kernel.HighPart = kernel_time.dwHighDateTime;
-  user.LowPart = user_time.dwLowDateTime;
-  user.HighPart = user_time.dwHighDateTime;
-
-  usage->ru_utime.tv_sec = (long)(user.QuadPart / 10000000);
-  usage->ru_utime.tv_usec = (long)((user.QuadPart % 10000000) / 10);
-  usage->ru_stime.tv_sec = (long)(kernel.QuadPart / 10000000);
-  usage->ru_stime.tv_usec = (long)((kernel.QuadPart % 10000000) / 10);
-
-  usage->ru_maxrss = (long)(pmc.PeakWorkingSetSize / 1024); // Convert to kilobytes
-
-  return 0;
-}
+int getrusage(int who, struct rusage *usage);
 #endif
 
 namespace klee {
