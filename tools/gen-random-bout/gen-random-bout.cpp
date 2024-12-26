@@ -17,7 +17,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+
+#ifdef _WIN32
+#else
 #include <unistd.h>
+#endif // _WIN32
 
 #include "klee/ADT/KTest.h"
 

@@ -40,7 +40,7 @@ else()
 endif()
 
 # Check `llvm-dis` is available
-set(LLVM_DIS_TOOL "${LLVM_TOOLS_BINARY_DIR}/llvm-dis")
+set(LLVM_DIS_TOOL "${LLVM_TOOLS_BINARY_DIR}/llvm-dis${CMAKE_EXECUTABLE_SUFFIX}")
 if (NOT EXISTS "${LLVM_DIS_TOOL}")
   message(FATAL_ERROR
     "The llvm-dis tool cannot be found at \"${LLVM_DIS_TOOL}\"")

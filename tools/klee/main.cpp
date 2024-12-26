@@ -48,11 +48,14 @@
 #include <llvm/Bitcode/ReaderWriter.h>
 #endif
 
+#ifdef _WIN32
+#else
 #include <dirent.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#endif // _WIN32
 
 #include <cerrno>
 #include <ctime>
@@ -441,7 +444,7 @@ void KleeHandler::setInterpreter(Interpreter *i) {
 std::string KleeHandler::getOutputFilename(const std::string &filename) {
   SmallString<128> path = m_outputDirectory;
   sys::path::append(path,filename);
-  return path.c_str();
+  return path.str().str();
 }
 
 std::unique_ptr<llvm::raw_fd_ostream>
@@ -673,7 +676,7 @@ std::string KleeHandler::getRunTimeLibraryPath(const char *argv0) {
 
   KLEE_DEBUG_WITH_TYPE("klee_runtime", llvm::dbgs() <<
                        libDir.c_str() << "\n");
-  return libDir.c_str();
+  return libDir.str().str();
 }
 
 //===----------------------------------------------------------------------===//
@@ -922,7 +925,6 @@ void externalsAndGlobalsCheck(const llvm::Module *m) {
 #if LLVM_VERSION_CODE >= LLVM_VERSION(8, 0)
           if (isa<InlineAsm>(ci->getCalledOperand())) {
 #else
-          if (isa<InlineAsm>(ci->getCalledValue())) {
 #endif
             klee_warning_once(&*fnIt,
                               "function \"%s\" has inline asm",

@@ -12,6 +12,7 @@
 #include "klee/klee.h"
 
 #include <string.h>
+#include <stdio.h>
 
 #ifdef __APPLE__
 /* macOS does not provide mempcpy in string.h */

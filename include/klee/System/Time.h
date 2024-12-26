@@ -14,7 +14,12 @@
 
 #include <chrono>
 #include <string>
+#ifdef _WIN32
+#define NOMINMAX
+#include <WinSock2.h>
+#else
 #include <sys/time.h>
+#endif // _WIN32
 
 namespace klee {
   namespace time {

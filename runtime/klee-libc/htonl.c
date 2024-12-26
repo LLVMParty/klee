@@ -7,8 +7,15 @@
 //
 //===----------------------------------------------------------------------===*/
 
+#ifdef _WIN32
+#define LITTLE_ENDIAN 0
+#define BIG_ENDIAN 1
+#define BYTE_ORDER LITTLE_ENDIAN
+#else
 #include <sys/types.h>
 #include <sys/param.h>
+#endif // _WIN32
+
 #include <stdint.h>
 
 #undef htons

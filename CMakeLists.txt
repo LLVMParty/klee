@@ -208,19 +208,19 @@ list(APPEND KLEE_COMPONENT_CXX_DEFINES ${LLVM_DEFINITIONS})
 list(APPEND KLEE_COMPONENT_EXTRA_INCLUDE_DIRS ${LLVM_INCLUDE_DIRS})
 
 # Find llvm-link
-set(LLVM_LINK "${LLVM_TOOLS_BINARY_DIR}/llvm-link")
+set(LLVM_LINK "${LLVM_TOOLS_BINARY_DIR}/llvm-link${CMAKE_EXECUTABLE_SUFFIX}")
 if (NOT EXISTS "${LLVM_LINK}")
   message(FATAL_ERROR "Failed to find llvm-link at \"${LLVM_LINK}\"")
 endif()
 
 # Find llvm-ar
-set(LLVM_AR "${LLVM_TOOLS_BINARY_DIR}/llvm-ar")
+set(LLVM_AR "${LLVM_TOOLS_BINARY_DIR}/llvm-ar${CMAKE_EXECUTABLE_SUFFIX}")
 if (NOT EXISTS "${LLVM_AR}")
   message(FATAL_ERROR "Failed to find llvm-ar at \"${LLVM_AR}\"")
 endif()
 
 # Find llvm-as
-set(LLVM_AS "${LLVM_TOOLS_BINARY_DIR}/llvm-as")
+set(LLVM_AS "${LLVM_TOOLS_BINARY_DIR}/llvm-as${CMAKE_EXECUTABLE_SUFFIX}")
 if (NOT EXISTS "${LLVM_AS}")
   message(FATAL_ERROR "Failed to find llvm-as at \"${LLVM_AS}\"")
 endif()
@@ -275,7 +275,10 @@ if (NOT LLVM_ENABLE_EH)
   if (ENABLE_SOLVER_METASMT)
     message(WARNING "Not disabling exceptions because metaSMT uses them")
   else()
-    klee_component_add_cxx_flag("-fno-exceptions" REQUIRED)
+    if (MSVC)
+    else()
+      klee_component_add_cxx_flag("-fno-exceptions" REQUIRED)
+    endif()
   endif()
 endif()
 
@@ -289,7 +292,11 @@ if (NOT LLVM_ENABLE_RTTI)
       "This build configuration is not supported and will likely not work."
       "You should recompile LLVM with RTTI enabled.")
   else()
-    klee_component_add_cxx_flag("-fno-rtti" REQUIRED)
+    if (MSVC)
+      klee_component_add_cxx_flag("/GR-" REQUIRED)
+    else()
+      klee_component_add_cxx_flag("-fno-rtti" REQUIRED)
+    endif()
   endif()
 endif()
 

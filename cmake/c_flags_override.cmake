@@ -19,6 +19,7 @@ if (("${CMAKE_C_COMPILER_ID}" MATCHES "Clang") OR ("${CMAKE_C_COMPILER_ID}" MATC
   set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Os")
   set(CMAKE_C_FLAGS_RELEASE_INIT "-O3")
   set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-O2 -g")
+elseif(MSVC)
 else()
   message(FATAL_ERROR "Overrides not set for compiler ${CMAKE_C_COMPILER_ID}")
 endif()

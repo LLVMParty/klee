@@ -15,8 +15,11 @@
 #include <regex>
 #include <sstream>
 #include <tuple>
-#include <sys/resource.h>
 
+#ifdef _WIN32
+#else
+#include <sys/resource.h>
+#endif // _WIN32
 
 using namespace klee;
 

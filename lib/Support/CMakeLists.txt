@@ -18,7 +18,9 @@ klee_add_component(kleeSupport
   TreeStream.cpp
 )
 
-target_link_libraries(kleeSupport PRIVATE ${ZLIB_LIBRARIES})
+if(ZLIB_FOUND)
+  target_link_libraries(kleeSupport PRIVATE ${ZLIB_LIBRARIES})
+endif()
 
 set(LLVM_COMPONENTS
   support
